@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 type Priority = 'High' | 'Medium' | 'Low';
-type Status = 'To Do' | 'Doing' | 'Completed';
+type Status = 'To Do' | 'Doing' | 'On Hold' | 'Completed';
 type View = 'list' | 'board';
 
 type Task = {
@@ -23,7 +23,7 @@ type Activity = {
   time: string;
 };
 
-const STATUSES: Status[] = ['To Do', 'Doing', 'Completed'];
+const STATUSES: Status[] = ['To Do', 'Doing',  'On Hold', 'Completed'];
 
 const MEMBERS: Record<string, string> = {
   D: 'Dexter',
@@ -143,11 +143,18 @@ const statusStyles: Record<
     color: '#34d399',
     background: 'rgba(52,211,153,.09)',
   },
+  'On Hold': {
+  color: '#fbbf24',
+  background: 'rgba(251,191,36,.09)',
+},
 };
 
 function Mascot({ talking }: { talking: boolean }) {
   return (
     <svg
+      style={{
+        cursor: 'pointer',
+      }}
       width="120"
       height="140"
       viewBox="0 0 120 140"
@@ -406,10 +413,14 @@ export default function TasksPage() {
   const [view, setView] =
     useState<View>('list');
 
+ const [theme, setTheme] =
+    useState<'dark' | 'light'>('dark');
+
   const [collapsed, setCollapsed] =
     useState<Record<Status, boolean>>({
       'To Do': false,
       Doing: false,
+      'On Hold': false,
       Completed: false,
     });
 
@@ -470,7 +481,12 @@ export default function TasksPage() {
     member: 'D',
     status: 'To Do' as Status,
   });
-
+useEffect(() => {
+  document.documentElement.setAttribute(
+    'data-theme',
+    theme
+  );
+}, [theme]);
   useEffect(() => {
     try {
       const savedTasks =
@@ -528,13 +544,13 @@ export default function TasksPage() {
 
   useEffect(() => {
     let index = 0;
+  
 
     const message =
-      'Welcome back, Dexter! 🎉 Your tasks are ready!';
+      'Hello Dexter! Welcome back, Dexter! 🎉 Your tasks are ready!';
 
     setTalking(true);
-
-    const interval =
+     const interval =
       window.setInterval(() => {
         setText(message.slice(0, index));
         index += 1;
@@ -683,6 +699,10 @@ export default function TasksPage() {
         new Date(b.due).getTime()
     )
     .slice(0, 4);
+
+
+ 
+
 
   const openAddModal = (
     status: Status = 'To Do'
@@ -864,9 +884,43 @@ export default function TasksPage() {
     setPriorityFilter('All');
     setStatusFilter('All');
   };
-
   return (
-    <div className="app-shell">
+    <div className="app-shell"
+      >
+  
+<div
+  style={{
+    position: 'fixed',
+    right: '25px',
+    bottom: '20px',
+    zIndex: 9999,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+  }}
+>
+  {welcome && (
+    <div
+      style={{
+        marginBottom: '8px',
+        padding: '10px 14px',
+        borderRadius: '12px',
+        background: 'rgba(17,17,43,.95)',
+        border: '1px solid rgba(167,139,250,.3)',
+        color: 'white',
+        fontSize: '13px',
+        fontWeight: 600,
+        maxWidth: '260px',
+        textAlign: 'center',
+        boxShadow: '0 10px 30px rgba(0,0,0,.3)',
+      }}
+    >
+      🔊 {text}
+    </div>
+  )}
+<Mascot talking={talking} />
+
+</div>
       <style>{`
         * {
           box-sizing: border-box;
@@ -876,11 +930,11 @@ export default function TasksPage() {
         body {
           margin: 0;
           padding: 0;
-          background: #07071a;
+          background: var(--bg);
         }
 
         body {
-          color: #fff;
+          color: var(--text);
           font-family:
             Inter,
             ui-sans-serif,
@@ -909,26 +963,30 @@ export default function TasksPage() {
           outline: 2px solid #8b5cf6;
           outline-offset: 2px;
         }
+:root {
+  --bg: #07071a;
+  --text: #ffffff;
+  --muted: #94a3b8;
+  --card: rgba(255,255,255,.05);
+  --border: rgba(255,255,255,.08);
+}
 
-        .app-shell {
-          min-height: 100vh;
-          display: flex;
-          position: relative;
-          overflow-x: hidden;
-          background:
-            radial-gradient(
-              circle at 10% 10%,
-              rgba(124,58,237,.14),
-              transparent 30%
-            ),
-            radial-gradient(
-              circle at 90% 90%,
-              rgba(56,189,248,.10),
-              transparent 30%
-            ),
-            #07071a;
-        }
-
+[data-theme='light'] {
+  --bg: #f8fafc;
+  --text: #0f172a;
+  --muted: #64748b;
+  --card: rgba(15,23,42,.05);
+  --border: rgba(15,23,42,.12);
+}
+.app-shell {
+  min-height: 100vh;
+  display: block;
+  position: relative;
+  overflow-x: hidden;
+  background: var(--bg);
+  color: var(--text);
+}
+      
         .background-grid {
           position: fixed;
           inset: 0;
@@ -1080,311 +1138,103 @@ export default function TasksPage() {
         </div>
       </div>
 
-      <button
-        onClick={() => openAddModal()}
-        style={{
-          border: 'none',
-          borderRadius: '12px',
-          padding: '12px 20px',
-          background:
-            'linear-gradient(135deg,#7c3aed,#2563eb)',
-          color: 'white',
-          fontWeight: 700,
-          cursor: 'pointer',
-        }}
-      >
-        + Add Task
+      
+     <div
+  style={{
+    display: 'flex',
+    gap: '10px',
+    alignItems: 'center',
+  }}
+>
+  <div
+  style={{
+    display: 'flex',
+    gap: '5px',
+    padding: '4px',
+    borderRadius: '11px',
+    background: 'rgba(255,255,255,.05)',
+    border: '1px solid rgba(255,255,255,.08)',
+  }}
+>
+  <button
+    type="button"
+    onClick={() => setView('list')}
+    style={{
+      border: 'none',
+      borderRadius: '8px',
+      padding: '8px 12px',
+      background:
+        view === 'list'
+          ? 'linear-gradient(135deg,#7c3aed,#2563eb)'
+          : 'transparent',
+      color: 'white',
+      cursor: 'pointer',
+      fontSize: '12px',
+      fontWeight: 800,
+    }}
+  >
+    ☰ List
+  </button>
+
+  <button
+    type="button"
+    onClick={() => setView('board')}
+    style={{
+      border: 'none',
+      borderRadius: '8px',
+      padding: '8px 12px',
+      background:
+        view === 'board'
+          ? 'linear-gradient(135deg,#7c3aed,#2563eb)'
+          : 'transparent',
+      color: 'white',
+      cursor: 'pointer',
+      fontSize: '12px',
+      fontWeight: 800,
+    }}
+  >
+    ▦ Board
+  </button>
+</div>
+  <button
+    type="button"
+    onClick={() =>
+      setTheme((previous) =>
+        previous === 'dark' ? 'light' : 'dark'
+      )
+    }
+    style={{
+      border: '1px solid rgba(255,255,255,.1)',
+      borderRadius: '12px',
+      padding: '12px 16px',
+      background: 'rgba(255,255,255,.05)',
+      color: 'white',
+      cursor: 'pointer',
+      fontWeight: 700,
+    }}
+  >
+  
+    {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
+  </button>
+
+  <button
+    type="button"
+    onClick={() => openAddModal()}
+    style={{
+      border: 'none',
+      borderRadius: '12px',
+      padding: '12px 20px',
+      background:
+        'linear-gradient(135deg,#7c3aed,#2563eb)',
+      color: 'white',
+      fontWeight: 700,
+      cursor: 'pointer',
+    }}
+    >
+      + Add Task
       </button>
-    </div>
-
-    {/* Welcome */}
-    {welcome && (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '15px',
-          padding: '20px',
-          marginBottom: '25px',
-          borderRadius: '18px',
-          background: 'rgba(124,58,237,.12)',
-          border:
-            '1px solid rgba(124,58,237,.25)',
-        }}
-      >
-        <Mascot talking={talking} />
-
-        <div
-          style={{
-            fontSize: '18px',
-            fontWeight: 600,
-          }}
-        >
-          {text}
-        </div>
       </div>
-    )}
-
-    {/* Statistics */}
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns:
-          'repeat(auto-fit,minmax(180px,1fr))',
-        gap: '15px',
-        marginBottom: '25px',
-      }}
-    >
-      <div
-        style={{
-          padding: '20px',
-          borderRadius: '16px',
-          background: 'rgba(255,255,255,.05)',
-          border:
-            '1px solid rgba(255,255,255,.08)',
-        }}
-      >
-        <div style={{ color: '#94a3b8' }}>
-          Total Tasks
-        </div>
-
-        <div
-          style={{
-            fontSize: '30px',
-            fontWeight: 800,
-            marginTop: '8px',
-          }}
-        >
-          {total}
-        </div>
       </div>
-
-      <div
-        style={{
-          padding: '20px',
-          borderRadius: '16px',
-          background: 'rgba(255,255,255,.05)',
-          border:
-            '1px solid rgba(255,255,255,.08)',
-        }}
-      >
-        <div style={{ color: '#94a3b8' }}>
-          In Progress
-        </div>
-
-        <div
-          style={{
-            fontSize: '30px',
-            fontWeight: 800,
-            marginTop: '8px',
-            color: '#38bdf8',
-          }}
-        >
-          {inProgress}
-        </div>
-      </div>
-
-      <div
-        style={{
-          padding: '20px',
-          borderRadius: '16px',
-          background: 'rgba(255,255,255,.05)',
-          border:
-            '1px solid rgba(255,255,255,.08)',
-        }}
-      >
-        <div style={{ color: '#94a3b8' }}>
-          Completed
-        </div>
-
-        <div
-          style={{
-            fontSize: '30px',
-            fontWeight: 800,
-            marginTop: '8px',
-            color: '#34d399',
-          }}
-        >
-          {completed}
-        </div>
-      </div>
-
-      <div
-        style={{
-          padding: '20px',
-          borderRadius: '16px',
-          background: 'rgba(255,255,255,.05)',
-          border:
-            '1px solid rgba(255,255,255,.08)',
-        }}
-      >
-        <div style={{ color: '#94a3b8' }}>
-          High Priority
-        </div>
-
-        <div
-          style={{
-            fontSize: '30px',
-            fontWeight: 800,
-            marginTop: '8px',
-            color: '#f87171',
-          }}
-        >
-          {highPriority}
-        </div>
-      </div>
-    </div>
-
-    {/* Progress */}
-    <div
-      style={{
-        padding: '20px',
-        borderRadius: '16px',
-        background: 'rgba(255,255,255,.05)',
-        border:
-          '1px solid rgba(255,255,255,.08)',
-        marginBottom: '25px',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginBottom: '10px',
-        }}
-      >
-        <span>Overall Progress</span>
-
-        <span style={{ color: '#a78bfa' }}>
-          {progress}%
-        </span>
-      </div>
-
-      <div
-        style={{
-          height: '8px',
-          borderRadius: '10px',
-          background: 'rgba(255,255,255,.08)',
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          style={{
-            width: `${progress}%`,
-            height: '100%',
-            background:
-              'linear-gradient(90deg,#7c3aed,#38bdf8)',
-            borderRadius: '10px',
-          }}
-        />
-      </div>
-    </div>
-
-    {/* Search + Filters */}
-    <div
-      style={{
-        display: 'flex',
-        gap: '10px',
-        marginBottom: '25px',
-        flexWrap: 'wrap',
-      }}
-    >
-      <input
-        id="task-search"
-        value={search}
-        onChange={(e) =>
-          setSearch(e.target.value)
-        }
-        placeholder="Search tasks..."
-        style={{
-          flex: 1,
-          minWidth: '220px',
-          padding: '12px 15px',
-          borderRadius: '10px',
-          border:
-            '1px solid rgba(255,255,255,.1)',
-          background: 'rgba(255,255,255,.05)',
-          color: 'white',
-          outline: 'none',
-        }}
-      />
-
-      <select
-        value={priorityFilter}
-        onChange={(e) =>
-          setPriorityFilter(
-            e.target.value as
-              | 'All'
-              | Priority
-          )
-        }
-        style={{
-          padding: '12px',
-          borderRadius: '10px',
-          background: '#11112b',
-          color: 'white',
-          border:
-            '1px solid rgba(255,255,255,.1)',
-        }}
-      >
-        <option value="All">
-          All Priority
-        </option>
-        <option value="High">High</option>
-        <option value="Medium">Medium</option>
-        <option value="Low">Low</option>
-      </select>
-
-      <select
-        value={statusFilter}
-        onChange={(e) =>
-          setStatusFilter(
-            e.target.value as
-              | 'All'
-              | Status
-          )
-        }
-        style={{
-          padding: '12px',
-          borderRadius: '10px',
-          background: '#11112b',
-          color: 'white',
-          border:
-            '1px solid rgba(255,255,255,.1)',
-        }}
-      >
-        <option value="All">
-          All Status
-        </option>
-        <option value="To Do">
-          To Do
-        </option>
-        <option value="Doing">
-          Doing
-        </option>
-        <option value="Completed">
-          Completed
-        </option>
-      </select>
-
-      <button
-        onClick={clearFilters}
-        style={{
-          padding: '12px 16px',
-          borderRadius: '10px',
-          border:
-            '1px solid rgba(255,255,255,.1)',
-          background:
-            'rgba(255,255,255,.05)',
-          color: 'white',
-          cursor: 'pointer',
-        }}
-      >
-        Clear
-      </button>
-    </div>
-
-    {/* Tasks */}
     <div
       style={{
         display: 'flex',
@@ -1392,257 +1242,535 @@ export default function TasksPage() {
         gap: '20px',
       }}
     >
-      {STATUSES.map((status) => {
-        const statusTasks =
-          tasksForStatus(status);
+  {view === 'list' ? (
+  <div
+    style={{
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '20px',
+    }}
+  >
+    {STATUSES.map((status) => {
+      const statusTasks = tasksForStatus(status);
 
-        return (
-          <div key={status}>
+      return (
+        <div key={status}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '12px',
+            }}
+          >
             <div
               style={{
-                display: 'flex',
-                justifyContent:
-                  'space-between',
-                alignItems: 'center',
-                marginBottom: '12px',
+                fontSize: '18px',
+                fontWeight: 750,
               }}
             >
-              <div
+              {status}{' '}
+              <span
                 style={{
-                  fontSize: '18px',
-                  fontWeight: 750,
+                  color: '#64748b',
+                  fontSize: '13px',
                 }}
               >
-                {status}{' '}
-                <span
-                  style={{
-                    color: '#64748b',
-                    fontSize: '13px',
-                  }}
-                >
-                  ({statusTasks.length})
-                </span>
-              </div>
-
-              <button
-                onClick={() =>
-                  toggleSection(status)
-                }
-                style={{
-                  border: 'none',
-                  background: 'transparent',
-                  color: '#94a3b8',
-                  cursor: 'pointer',
-                }}
-              >
-                {collapsed[status]
-                  ? 'Show'
-                  : 'Hide'}
-              </button>
+                ({statusTasks.length})
+              </span>
             </div>
 
-            {!collapsed[status] &&
-              statusTasks.map((task) => {
-                const p =
-                  priorityStyles[
-                    task.priority
-                  ];
+            <button
+              type="button"
+              onClick={() => toggleSection(status)}
+              style={{
+                border: 'none',
+                background: 'transparent',
+                color: '#94a3b8',
+                cursor: 'pointer',
+              }}
+            >
+              {collapsed[status] ? 'Show' : 'Hide'}
+            </button>
+          </div>
 
-                return (
+          {!collapsed[status] &&
+            statusTasks.map((task) => {
+              const p = priorityStyles[task.priority];
+
+              return (
+                <div
+                  key={task.id}
+                  style={{
+                    padding: '18px',
+                    marginBottom: '10px',
+                    borderRadius: '15px',
+                    background: 'rgba(255,255,255,.045)',
+                    border: '1px solid rgba(255,255,255,.08)',
+                  }}
+                >
                   <div
-                    key={task.id}
                     style={{
-                      padding: '18px',
-                      marginBottom: '10px',
-                      borderRadius: '15px',
-                      background:
-                        'rgba(255,255,255,.045)',
-                      border:
-                        '1px solid rgba(255,255,255,.08)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      gap: '15px',
+                      flexWrap: 'wrap',
                     }}
                   >
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent:
-                          'space-between',
-                        gap: '15px',
-                        flexWrap: 'wrap',
-                      }}
-                    >
-                      <div>
-                        <div
-                          style={{
-                            fontSize: '17px',
-                            fontWeight: 700,
-                            marginBottom: '7px',
-                          }}
-                        >
-                          {task.title}
-                        </div>
+                    <div>
+                      <div
+                        style={{
+                          fontSize: '17px',
+                          fontWeight: 700,
+                          marginBottom: '7px',
+                        }}
+                      >
+                        {task.title}
+                      </div>
 
-                        <div
-                          style={{
-                            color: '#94a3b8',
-                            fontSize: '13px',
-                            marginBottom: '12px',
-                          }}
-                        >
-                          {task.description}
-                        </div>
-
-                        <div
-                          style={{
-                            display: 'flex',
-                            gap: '8px',
-                            alignItems:
-                              'center',
-                            flexWrap: 'wrap',
-                          }}
-                        >
-                          <span
-                            style={{
-                              padding:
-                                '5px 9px',
-                              borderRadius:
-                                '8px',
-                              color: p.color,
-                              background:
-                                p.background,
-                              border: `1px solid ${p.border}`,
-                              fontSize:
-                                '11px',
-                              fontWeight: 700,
-                            }}
-                          >
-                            {task.priority}
-                          </span>
-
-                          <span
-                            style={{
-                              color: '#94a3b8',
-                              fontSize: '12px',
-                            }}
-                          >
-                            Due:{' '}
-                            {formatDate(
-                              task.due
-                            )}
-                          </span>
-
-                          <Avatar
-                            member={
-                              task.member
-                            }
-                            small
-                          />
-                        </div>
+                      <div
+                        style={{
+                          color: '#94a3b8',
+                          fontSize: '13px',
+                          marginBottom: '12px',
+                        }}
+                      >
+                        {task.description}
                       </div>
 
                       <div
                         style={{
                           display: 'flex',
-                          gap: '7px',
-                          alignItems:
-                            'center',
+                          gap: '8px',
+                          alignItems: 'center',
+                          flexWrap: 'wrap',
                         }}
                       >
-                        <button
-                          onClick={() =>
-                            toggleComplete(
-                              task
-                            )
-                          }
+                        <span
                           style={{
-                            padding:
-                              '8px 11px',
-                            borderRadius:
-                              '8px',
-                            border: 'none',
-                            background:
-                              '#123b31',
-                            color:
-                              '#34d399',
-                            cursor:
-                              'pointer',
+                            padding: '5px 9px',
+                            borderRadius: '8px',
+                            color: p.color,
+                            background: p.background,
+                            border: `1px solid ${p.border}`,
+                            fontSize: '11px',
+                            fontWeight: 700,
                           }}
                         >
-                          {task.status ===
-                          'Completed'
-                            ? 'Reopen'
-                            : '✓'}
-                        </button>
+                          {task.priority}
+                        </span>
 
-                        <button
-                          onClick={() =>
-                            openEditModal(
-                              task
-                            )
-                          }
+                        <span
                           style={{
-                            padding:
-                              '8px 11px',
-                            borderRadius:
-                              '8px',
-                            border: 'none',
-                            background:
-                              '#1e1b4b',
-                            color:
-                              '#c4b5fd',
-                            cursor:
-                              'pointer',
+                            color: '#94a3b8',
+                            fontSize: '12px',
                           }}
                         >
-                          Edit
-                        </button>
+                          Due: {formatDate(task.due)}
+                        </span>
 
-                        <button
-                          onClick={() =>
-                            setDeleteTask(
-                              task
-                            )
-                          }
-                          style={{
-                            padding:
-                              '8px 11px',
-                            borderRadius:
-                              '8px',
-                            border: 'none',
-                            background:
-                              '#3b1515',
-                            color:
-                              '#f87171',
-                            cursor:
-                              'pointer',
-                          }}
-                        >
-                          Delete
-                        </button>
+                        <Avatar
+                          member={task.member}
+                          small
+                        />
                       </div>
                     </div>
-                  </div>
-                );
-              })}
 
-            {!collapsed[status] &&
-              statusTasks.length === 0 && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: '7px',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => toggleComplete(task)}
+                        style={{
+                          padding: '8px 11px',
+                          borderRadius: '8px',
+                          border: 'none',
+                          background: '#123b31',
+                          color: '#34d399',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {task.status === 'Completed'
+                          ? 'Reopen'
+                          : '✓'}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => openEditModal(task)}
+                        style={{
+                          padding: '8px 11px',
+                          borderRadius: '8px',
+                          border: 'none',
+                          background: '#1e1b4b',
+                          color: '#c4b5fd',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setDeleteTask(task)}
+                        style={{
+                          padding: '8px 11px',
+                          borderRadius: '8px',
+                          border: 'none',
+                          background: '#3b1515',
+                          color: '#f87171',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+          {!collapsed[status] &&
+            statusTasks.length === 0 && (
+              <div
+                style={{
+                  padding: '25px',
+                  textAlign: 'center',
+                  color: '#64748b',
+                  border: '1px dashed rgba(255,255,255,.1)',
+                  borderRadius: '12px',
+                }}
+              >
+                No tasks here.
+              </div>
+            )}
+        </div>
+      );
+    })}
+  </div>
+) : (
+  /* ================= BOARD VIEW ================= */
+
+  <div
+    style={{
+      display: 'grid',
+      gridTemplateColumns:
+        'repeat(4, minmax(230px, 1fr))',
+      gap: '14px',
+      alignItems: 'start',
+      overflowX: 'auto',
+      paddingBottom: '10px',
+    }}
+  >
+    {STATUSES.map((status) => {
+      const statusTasks = tasksForStatus(status);
+      const s = statusStyles[status];
+
+      return (
+        <div
+          key={status}
+          onDragOver={(e) => {
+            e.preventDefault();
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+
+            if (draggedTask !== null) {
+              moveTask(draggedTask, status);
+              setDraggedTask(null);
+            }
+          }}
+          style={{
+            minHeight: '500px',
+            borderRadius: '18px',
+            padding: '14px',
+            background: 'rgba(255,255,255,.035)',
+            border: '1px solid rgba(255,255,255,.08)',
+          }}
+        >
+          {/* Column Header */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '14px',
+              padding: '4px 2px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontWeight: 800,
+              }}
+            >
+              <span
+                style={{
+                  width: '9px',
+                  height: '9px',
+                  borderRadius: '50%',
+                  background: s.color,
+                  boxShadow: `0 0 12px ${s.color}`,
+                }}
+              />
+
+              {status}
+            </div>
+
+            <span
+              style={{
+                minWidth: '25px',
+                height: '25px',
+                padding: '0 7px',
+                display: 'grid',
+                placeItems: 'center',
+                borderRadius: '8px',
+                background: s.background,
+                color: s.color,
+                fontSize: '11px',
+                fontWeight: 800,
+              }}
+            >
+              {statusTasks.length}
+            </span>
+          </div>
+
+          {/* Add Task */}
+          <button
+            type="button"
+            onClick={() => openAddModal(status)}
+            style={{
+              width: '100%',
+              padding: '10px',
+              marginBottom: '12px',
+              borderRadius: '10px',
+              border: '1px dashed rgba(255,255,255,.12)',
+              background: 'rgba(255,255,255,.025)',
+              color: '#94a3b8',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: 700,
+            }}
+          >
+            + Add Task
+          </button>
+
+          {/* Cards */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+            }}
+          >
+            {statusTasks.map((task) => {
+              const p = priorityStyles[task.priority];
+
+              return (
                 <div
+                  key={task.id}
+                  draggable
+                  onDragStart={() => {
+                    setDraggedTask(task.id);
+                  }}
+                  onDragEnd={() => {
+                    setDraggedTask(null);
+                  }}
                   style={{
-                    padding: '25px',
-                    textAlign: 'center',
-                    color: '#64748b',
+                    padding: '15px',
+                    borderRadius: '14px',
+                    background:
+                      'linear-gradient(145deg, rgba(255,255,255,.065), rgba(255,255,255,.035))',
                     border:
-                      '1px dashed rgba(255,255,255,.1)',
-                    borderRadius: '12px',
+                      draggedTask === task.id
+                        ? '1px solid rgba(167,139,250,.6)'
+                        : '1px solid rgba(255,255,255,.08)',
+                    cursor: 'grab',
+                    boxShadow:
+                      '0 8px 25px rgba(0,0,0,.15)',
                   }}
                 >
-                  No tasks here.
+                  {/* Card Top */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      gap: '8px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '14px',
+                        fontWeight: 800,
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {task.title}
+                    </div>
+
+                    <Avatar
+                      member={task.member}
+                      small
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div
+                    style={{
+                      marginTop: '8px',
+                      color: '#94a3b8',
+                      fontSize: '11px',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {task.description}
+                  </div>
+
+                  {/* Priority + Due */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '8px',
+                      marginTop: '13px',
+                    }}
+                  >
+                    <span
+                      style={{
+                        padding: '4px 8px',
+                        borderRadius: '7px',
+                        color: p.color,
+                        background: p.background,
+                        border: `1px solid ${p.border}`,
+                        fontSize: '10px',
+                        fontWeight: 800,
+                      }}
+                    >
+                      {task.priority}
+                    </span>
+
+                    <span
+                      style={{
+                        color: isOverdue(
+                          task.due,
+                          task.status
+                        )
+                          ? '#f87171'
+                          : '#94a3b8',
+                        fontSize: '10px',
+                        fontWeight: 700,
+                      }}
+                    >
+                      📅 {relativeDue(
+                        task.due,
+                        task.status
+                      )}
+                    </span>
+                  </div>
+
+                  {/* Actions */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: '6px',
+                      marginTop: '13px',
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => toggleComplete(task)}
+                      style={{
+                        flex: 1,
+                        padding: '7px 5px',
+                        borderRadius: '8px',
+                        border: 'none',
+                        background:
+                          task.status === 'Completed'
+                            ? 'rgba(52,211,153,.12)'
+                            : 'rgba(52,211,153,.08)',
+                        color: '#34d399',
+                        cursor: 'pointer',
+                        fontSize: '10px',
+                        fontWeight: 800,
+                      }}
+                    >
+                      {task.status === 'Completed'
+                        ? '↩ Reopen'
+                        : '✓ Done'}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(task)}
+                      style={{
+                        padding: '7px 9px',
+                        borderRadius: '8px',
+                        border: 'none',
+                        background:
+                          'rgba(124,58,237,.12)',
+                        color: '#c4b5fd',
+                        cursor: 'pointer',
+                        fontSize: '10px',
+                        fontWeight: 800,
+                      }}
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setDeleteTask(task)}
+                      style={{
+                        padding: '7px 9px',
+                        borderRadius: '8px',
+                        border: 'none',
+                        background:
+                          'rgba(248,113,113,.10)',
+                        color: '#f87171',
+                        cursor: 'pointer',
+                        fontSize: '10px',
+                        fontWeight: 800,
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
-              )}
+              );
+            })}
+
+            {statusTasks.length === 0 && (
+              <div
+                style={{
+                  minHeight: '120px',
+                  display: 'grid',
+                  placeItems: 'center',
+                  textAlign: 'center',
+                  color: '#64748b',
+                  fontSize: '12px',
+                  border:
+                    '1px dashed rgba(255,255,255,.08)',
+                  borderRadius: '12px',
+                }}
+              >
+                Drop tasks here
+              </div>
+            )}
           </div>
-        );
-      })}
-    </div>
+        </div>
+      );
+    })}
+  </div>
+)}   
   </div>
 </div>
 
@@ -1992,6 +2120,9 @@ export default function TasksPage() {
                   <option value="Doing">
                     Doing
                   </option>
+                  <option value="On Hold">
+                    On Hold
+                  </option>
                   <option value="Completed">
                     Completed
                   </option>
@@ -2176,6 +2307,7 @@ export default function TasksPage() {
         </div>
       )}
 
-      </div>
+    </div>
+    </div>
   );
 }
