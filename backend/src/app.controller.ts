@@ -1,12 +1,23 @@
-import { Controller, Get } from '@nestjs/common';
-import { AppService } from './app.service';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 
-@Controller()
+@Controller('api/tasks')
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  private tasks: any[] = [];
 
   @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  getTasks() {
+    return this.tasks;
+  }
+
+  @Post()
+  createTask(@Body() task: any) {
+    const newTask = {
+      id: Date.now(),
+      ...task,
+    };
+
+    this.tasks.push(newTask);
+
+    return newTask;
   }
 }
